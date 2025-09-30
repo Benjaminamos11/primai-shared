@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: primai-shared
+Version: 0.1.0
+Summary: Shared Pydantic models and utilities for PrimAI API and Workers
+Author: PrimAI
+Requires-Python: >=3.11
+Requires-Dist: pydantic>=2.8.2
+Requires-Dist: pydantic-settings>=2.3.4
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

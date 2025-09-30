@@ -1,0 +1,150 @@
+# PrimAI Shared
+
+**Python library** for sharing Pydantic models and utilities between `primai-api` and `primai-workers`.
+
+## Purpose
+
+Avoid code duplication by sharing:
+- **Pydantic schemas** - Data validation models
+- **Constants** - Insurance types, status values, etc.
+- **Utilities** - Validation and formatting functions
+
+## Installation
+
+### For Local Development (Editable Install)
+
+From `primai-api` or `primai-workers`:
+
+```bash
+pip install -e ../primai-shared
+```
+
+This allows you to import from the shared library:
+
+```python
+from shared import SessionCreate, validate_email, INSURANCE_TYPES
+```
+
+### In requirements.txt
+
+For production, you can install from git:
+
+```txt
+# primai-api/requirements.txt
+primai-shared @ git+https://github.com/primai/primai-shared.git
+```
+
+Or use local path during development:
+
+```txt
+# primai-api/requirements.txt
+-e ../primai-shared
+```
+
+## Usage
+
+### In API (primai-api)
+
+```python
+from shared import SessionCreate, validate_email, EMAIL_STATUS
+
+# Validate request data
+session_data = SessionCreate(
+    session_id="abc123",
+    user_data={"ip": "1.2.3.4"}
+)
+
+# Use constants
+if email.status == EMAIL_STATUS["SENT"]:
+    print("Email was sent successfully")
+
+# Use utilities
+if validate_email("user@example.com"):
+    print("Valid email")
+```
+
+### In Workers (primai-workers)
+
+```python
+from shared import EmailCreate, format_currency_chf, QUOTE_STATUS
+
+# Create email using schema
+email = EmailCreate(
+    to_email="customer@example.com",
+    from_email="noreply@primai.ch",
+    subject="Your Quote",
+    body_html="<h1>Your quote is ready!</h1>"
+)
+
+# Format currency
+price_text = format_currency_chf(1250.50)  # "CHF 1,250.50"
+
+# Use constants
+if quote.status == QUOTE_STATUS["ACCEPTED"]:
+    process_acceptance()
+```
+
+## Structure
+
+```
+shared/
+├── __init__.py       # Main exports
+├── schemas.py        # Pydantic models
+├── constants.py      # Constants and enums
+└── utils.py          # Utility functions
+```
+
+## What's Included
+
+### Schemas (Pydantic Models)
+- `SessionCreate`
+- `ConversationCreate`
+- `MessageCreate`
+- `PremiumQueryCreate`
+- `QuoteCreate`
+- `DocumentCreate`
+- `EmailCreate`
+- `LeadCreate`
+- `AppointmentCreate`
+
+### Constants
+- `INSURANCE_TYPES` - Insurance type mappings
+- `DOCUMENT_STATUS` - Document status values
+- `EMAIL_STATUS` - Email status values
+- `LEAD_STATUS` - Lead status values
+- `QUOTE_STATUS` - Quote status values
+- `MESSAGE_ROLES` - Message role types
+- `LLM_PROVIDERS` - LLM provider names
+
+### Utilities
+- `validate_email()` - Email validation
+- `validate_swiss_phone()` - Swiss phone validation
+- `validate_swiss_postal_code()` - Postal code validation
+- `format_currency_chf()` - Currency formatting
+- `format_swiss_phone()` - Phone number formatting
+- `truncate_text()` - Text truncation
+- `calculate_savings_percentage()` - Savings calculation
+
+## Development
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Format code
+black .
+
+# Lint code
+ruff check .
+
+# Type check
+mypy shared
+```
+
+## Why Python (not TypeScript)?
+
+This library is for **backend services only** (API + Workers), which are both Python. The frontend has its own types in TypeScript within the `primai-frontend` repo.
+
+## License
+
+Proprietary - PrimAI
