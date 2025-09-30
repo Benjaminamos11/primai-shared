@@ -1,15 +1,22 @@
-"""Lead and appointment models"""
-from sqlalchemy import Column, String, DateTime, ForeignKey, JSON
+"""Lead and appointment models."""
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+
 from shared.models.base import BaseModel
 
 
 class Lead(BaseModel):
-    """Lead/prospect"""
-    
+    """Lead/prospect."""
+
     __tablename__ = "leads"
-    
-    session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=True, index=True)
+
+    session_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("sessions.id"),
+        nullable=True,
+        index=True,
+    )
     email = Column(String, nullable=False, index=True)
     name = Column(String, nullable=True)
     phone = Column(String, nullable=True)
@@ -19,11 +26,16 @@ class Lead(BaseModel):
 
 
 class Appointment(BaseModel):
-    """Scheduled appointment"""
-    
+    """Scheduled appointment."""
+
     __tablename__ = "appointments"
-    
-    lead_id = Column(UUID(as_uuid=True), ForeignKey("leads.id"), nullable=False, index=True)
+
+    lead_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("leads.id"),
+        nullable=False,
+        index=True,
+    )
     scheduled_at = Column(DateTime, nullable=False)
     duration_minutes = Column(String, default="30")
     meeting_type = Column(String, nullable=False)

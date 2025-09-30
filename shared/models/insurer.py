@@ -1,14 +1,16 @@
-"""Insurer models"""
-from sqlalchemy import Column, String, Text, ForeignKey, JSON, Boolean
+"""Insurer models."""
+
+from sqlalchemy import JSON, Boolean, Column, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
+
 from shared.models.base import BaseModel
 
 
 class Insurer(BaseModel):
-    """Insurance company"""
-    
+    """Insurance company."""
+
     __tablename__ = "insurers"
-    
+
     name = Column(String, nullable=False, unique=True)
     short_name = Column(String, nullable=True)
     website = Column(String, nullable=True)
@@ -19,11 +21,16 @@ class Insurer(BaseModel):
 
 
 class InsurerContact(BaseModel):
-    """Insurer contact person"""
-    
+    """Insurer contact person."""
+
     __tablename__ = "insurer_contacts"
-    
-    insurer_id = Column(UUID(as_uuid=True), ForeignKey("insurers.id"), nullable=False, index=True)
+
+    insurer_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("insurers.id"),
+        nullable=False,
+        index=True,
+    )
     name = Column(String, nullable=False)
     email = Column(String, nullable=False)
     phone = Column(String, nullable=True)

@@ -1,6 +1,4 @@
-"""
-Constants used across API and Workers
-"""
+"""Constants used across API and Workers."""
 
 # Insurance Types
 INSURANCE_TYPES = {

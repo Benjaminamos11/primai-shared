@@ -9,22 +9,17 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
         with:
-          python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-      
-      - name: Run Black (format check)
-        run: black --check .
-      
-      - name: Run Ruff (lint)
-        run: ruff check .
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        uses: py-actions/py-dependency-install@v3
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1

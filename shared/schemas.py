@@ -1,15 +1,15 @@
-"""
-Pydantic schemas for data validation
-Shared between API and Workers
-"""
-from typing import Optional, Dict, Any
-from pydantic import BaseModel, EmailStr, Field
+"""Pydantic schemas for data validation Shared between API and Workers."""
+
 from datetime import datetime
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, EmailStr, Field
 
 
 # Session Schemas
 class SessionCreate(BaseModel):
-    """Schema for creating a session"""
+    """Schema for creating a session."""
+
     session_id: str
     user_data: Dict[str, Any] = {}
     meta_data: Dict[str, Any] = {}  # Renamed from 'metadata' (reserved by SQLAlchemy)
@@ -17,7 +17,8 @@ class SessionCreate(BaseModel):
 
 # Conversation Schemas
 class ConversationCreate(BaseModel):
-    """Schema for creating a conversation"""
+    """Schema for creating a conversation."""
+
     session_id: str
     title: Optional[str] = None
     context: Dict[str, Any] = {}
@@ -26,7 +27,8 @@ class ConversationCreate(BaseModel):
 
 # Message Schemas
 class MessageCreate(BaseModel):
-    """Schema for creating a message"""
+    """Schema for creating a message."""
+
     conversation_id: str
     role: str = Field(..., pattern="^(user|assistant|system)$")
     content: str
@@ -36,14 +38,16 @@ class MessageCreate(BaseModel):
 
 # Insurance Schemas
 class PremiumQueryCreate(BaseModel):
-    """Schema for creating a premium query"""
+    """Schema for creating a premium query."""
+
     session_id: str
     insurance_type: str
     query_data: Dict[str, Any]
 
 
 class QuoteCreate(BaseModel):
-    """Schema for creating a quote"""
+    """Schema for creating a quote."""
+
     premium_query_id: str
     insurer_id: Optional[str] = None
     product_name: str
@@ -54,7 +58,8 @@ class QuoteCreate(BaseModel):
 
 # Document Schemas
 class DocumentCreate(BaseModel):
-    """Schema for creating a document"""
+    """Schema for creating a document."""
+
     session_id: str
     template_id: Optional[str] = None
     document_type: str
@@ -65,7 +70,8 @@ class DocumentCreate(BaseModel):
 
 # Email Schemas
 class EmailCreate(BaseModel):
-    """Schema for creating an email"""
+    """Schema for creating an email."""
+
     session_id: Optional[str] = None
     to_email: EmailStr
     from_email: EmailStr
@@ -77,7 +83,8 @@ class EmailCreate(BaseModel):
 
 # Lead Schemas
 class LeadCreate(BaseModel):
-    """Schema for creating a lead"""
+    """Schema for creating a lead."""
+
     session_id: Optional[str] = None
     email: EmailStr
     name: Optional[str] = None
@@ -88,7 +95,8 @@ class LeadCreate(BaseModel):
 
 # Appointment Schemas
 class AppointmentCreate(BaseModel):
-    """Schema for creating an appointment"""
+    """Schema for creating an appointment."""
+
     lead_id: str
     scheduled_at: datetime
     duration_minutes: int = 30

@@ -1,13 +1,16 @@
-"""
-Database configuration and session management
-Shared between API and Workers
-"""
+"""Database configuration and session management Shared between API and
+Workers."""
+
 import os
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
 # Get database URL from environment
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/primai")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/primai",
+)
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 # Create async engine
@@ -29,9 +32,7 @@ Base = declarative_base()
 
 
 async def get_db() -> AsyncSession:
-    """
-    Dependency for getting async database sessions
-    """
+    """Dependency for getting async database sessions."""
     async with AsyncSessionLocal() as session:
         try:
             yield session
