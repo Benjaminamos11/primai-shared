@@ -1,0 +1,65 @@
+"""Base repository with common CRUD operations."""
+
+from typing import Generic, List, Optional, Type, TypeVar
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from shared.models.base import BaseModel
+
+ModelType = TypeVar("ModelType", bound=BaseModel)
+
+
+class BaseRepository(Generic[ModelType]):
+    """Base repository with common database operations."""
+
+    def __init__(self, model: Type[ModelType], db: AsyncSession):
+        self.model = model
+        self.db = db
+
+    async def get_by_id(self, id: UUID) -> Optional[ModelType]:
+        """Get record by ID."""
+        return await self.db.get(self.model, id)
+
+    async def get_all(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[ModelType]:
+        """Get all records with pagination."""
+        result = await self.db.execute(
+            select(self.model).offset(skip).limit(limit),
+        )
+        return list(result.scalars().all())
+
+    async def create(self, **kwargs) -> ModelType:
+        """Create new record."""
+        instance = self.model(**kwargs)
+        self.db.add(instance)
+        await self.db.commit()
+        await self.db.refresh(instance)
+        return instance
+
+    async def update(self, id: UUID, **kwargs) -> Optional[ModelType]:
+        """Update record by ID."""
+        instance = await self.get_by_id(id)
+        if not instance:
+            return None
+
+        for key, value in kwargs.items():
+            setattr(instance, key, value)
+
+        await self.db.commit()
+        await self.db.refresh(instance)
+        return instance
+
+    async def delete(self, id: UUID) -> bool:
+        """Delete record by ID."""
+        instance = await self.get_by_id(id)
+        if not instance:
+            return False
+
+        await self.db.delete(instance)
+        await self.db.commit()
+        return True
