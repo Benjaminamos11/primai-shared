@@ -11,20 +11,6 @@ Avoid code duplication by sharing:
 
 ## Installation
 
-### For Local Development (Editable Install)
-
-From `primai-api` or `primai-workers`:
-
-```bash
-pip install -e ../primai-shared
-```
-
-This allows you to import from the shared library:
-
-```python
-from shared import SessionCreate, validate_email, INSURANCE_TYPES
-```
-
 ### In requirements.txt
 
 For production, you can install from git:
@@ -32,13 +18,6 @@ For production, you can install from git:
 ```txt
 # primai-api/requirements.txt
 primai-shared @ git+https://github.com/primai/primai-shared.git
-```
-
-Or use local path during development:
-
-```txt
-# primai-api/requirements.txt
--e ../primai-shared
 ```
 
 ## Usage
