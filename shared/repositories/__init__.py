@@ -1,11 +1,13 @@
-"""Repositories for data access."""
-
-from shared.repositories.event_repository import EventRepository
+from shared.repositories.base_repository import BaseRepository
+from shared.repositories.chat_message_repository import ChatMessageRepository
+from shared.repositories.chat_session_repository import ChatSessionRepository
+from shared.repositories.funnel_event_repository import FunnelEventRepository
 from shared.repositories.lead_repository import LeadRepository
-from shared.repositories.session_repository import SessionRepository
 
 __all__ = [
-    "EventRepository",
+    "BaseRepository",
+    "ChatSessionRepository",
+    "ChatMessageRepository",
     "LeadRepository",
-    "SessionRepository",
+    "FunnelEventRepository",
 ]

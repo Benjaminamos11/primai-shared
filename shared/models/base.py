@@ -1,10 +1,8 @@
-"""Base model with common fields."""
+from typing import Any
+from uuid import uuid4
 
-import uuid
-from datetime import datetime
-
-from sqlalchemy import Column, DateTime
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, DateTime, String, func
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -15,11 +13,25 @@ class BaseModel(Base):
 
     __abstract__ = True
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
         nullable=False,
     )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    @declared_attr
+    def __tablename__(cls) -> str:
+        return cls.__name__.lower()
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert model to dictionary."""
+        return {
+            column.name: getattr(self, column.name) for column in self.__table__.columns
+        }

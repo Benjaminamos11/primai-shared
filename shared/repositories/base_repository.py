@@ -1,7 +1,6 @@
 """Base repository with common CRUD operations."""
 
 from typing import Generic, List, Optional, Type, TypeVar
-from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +17,7 @@ class BaseRepository(Generic[ModelType]):
         self.model = model
         self.db = db
 
-    async def get_by_id(self, id: UUID) -> Optional[ModelType]:
+    async def get_by_id(self, id: str) -> Optional[ModelType]:
         """Get record by ID."""
         return await self.db.get(self.model, id)
 
@@ -41,7 +40,7 @@ class BaseRepository(Generic[ModelType]):
         await self.db.refresh(instance)
         return instance
 
-    async def update(self, id: UUID, **kwargs) -> Optional[ModelType]:
+    async def update(self, id: str, **kwargs) -> Optional[ModelType]:
         """Update record by ID."""
         instance = await self.get_by_id(id)
         if not instance:
@@ -54,7 +53,7 @@ class BaseRepository(Generic[ModelType]):
         await self.db.refresh(instance)
         return instance
 
-    async def delete(self, id: UUID) -> bool:
+    async def delete(self, id: str) -> bool:
         """Delete record by ID."""
         instance = await self.get_by_id(id)
         if not instance:

@@ -1,11 +1,9 @@
-"""Lead repository."""
-
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from shared.models import Lead
+from shared.models.lead import Lead
 from shared.repositories.base_repository import BaseRepository
 
 
@@ -22,27 +20,23 @@ class LeadRepository(BaseRepository[Lead]):
         )
         return result.scalar_one_or_none()
 
-    async def upsert(
-        self,
-        email: str,
-        session_id: Optional[str] = None,
-        **kwargs,
-    ) -> Lead:
-        """Create or update lead by email."""
-        lead = await self.get_by_email(email)
-
-        if lead:
-            # Update existing
-            for key, value in kwargs.items():
-                if value is not None:
-                    setattr(lead, key, value)
-            await self.db.commit()
-            await self.db.refresh(lead)
-            return lead
-
-        # Create new
-        return await self.create(
-            email=email,
-            session_id=session_id,
-            **kwargs,
+    async def get_by_session_id(self, session_id: str) -> Optional[Lead]:
+        """Get lead by session ID."""
+        result = await self.db.execute(
+            select(Lead).where(Lead.session_id == session_id),
         )
+        return result.scalar_one_or_none()
+
+    async def get_recent_leads(self, limit: int = 10) -> List[Lead]:
+        """Get recent leads."""
+        result = await self.db.execute(
+            select(Lead).order_by(Lead.created_at.desc()).limit(limit),
+        )
+        return list(result.scalars().all())
+
+    async def get_consented_leads(self) -> List[Lead]:
+        """Get leads who have given consent."""
+        result = await self.db.execute(
+            select(Lead).where(Lead.consent == True),  # noqa: E712
+        )
+        return list(result.scalars().all())
