@@ -32,6 +32,7 @@ class LeadRepository(BaseRepository[Lead]):
         page: int = 1,
         limit: int = 10,
         search: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> Tuple[List[Lead], int]:
         """Get paginated leads with filters.
 
@@ -39,6 +40,7 @@ class LeadRepository(BaseRepository[Lead]):
             page: Page number (1-indexed)
             limit: Items per page
             search: Search term for email (contains), first name, last name, or phone
+            session_id: Filter by session_id
 
         Returns:
             Tuple of (leads list, total count)
@@ -61,7 +63,7 @@ class LeadRepository(BaseRepository[Lead]):
             Lead.updated_at,
         )
 
-        # Apply search filter
+        # Apply filters
         conditions = []
 
         if search:
@@ -74,6 +76,9 @@ class LeadRepository(BaseRepository[Lead]):
                     Lead.phone.ilike(f"%{search}%"),
                 ),
             )
+
+        if session_id:
+            conditions.append(Lead.session_id == session_id)
 
         if conditions:
             query = query.where(*conditions)
