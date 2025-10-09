@@ -1,6 +1,6 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models.chat_session import ChatSession
@@ -13,23 +13,72 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
     def __init__(self, db: AsyncSession):
         super().__init__(ChatSession, db)
 
-    async def get_by_lead_id(self, lead_id: str) -> Optional[ChatSession]:
-        """Get chat session by lead ID."""
-        result = await self.db.execute(
-            select(ChatSession).where(ChatSession.lead_id == lead_id),
-        )
-        return result.scalar_one_or_none()
+    async def get_sessions_with_filters(
+        self,
+        page: int = 1,
+        limit: int = 10,
+        accident: Optional[bool] = None,
+        search: Optional[str] = None,
+    ) -> Tuple[List[ChatSession], int]:
+        """Get paginated chat sessions with filters.
 
-    async def get_by_email(self, email: str) -> List[ChatSession]:
-        """Get chat sessions by email."""
-        result = await self.db.execute(
-            select(ChatSession).where(ChatSession.email == email),
-        )
-        return list(result.scalars().all())
+        Args:
+            page: Page number (1-indexed)
+            limit: Items per page
+            accident: Filter by accident coverage (True/False/None for all)
+            search: Search term for email (contains) or exact PLZ match
 
-    async def get_recent_sessions(self, limit: int = 10) -> List[ChatSession]:
-        """Get recent chat sessions."""
-        result = await self.db.execute(
-            select(ChatSession).order_by(ChatSession.created_at.desc()).limit(limit),
+        Returns:
+            Tuple of (sessions list, total count)
+        """
+        # Build base query with selected fields only
+        query = select(
+            ChatSession.id,
+            ChatSession.plz,
+            ChatSession.canton,
+            ChatSession.yob,
+            ChatSession.age,
+            ChatSession.model_pref,
+            ChatSession.deductible,
+            ChatSession.accident,
+            ChatSession.household_json,
+            ChatSession.email,
+            ChatSession.consent,
+            ChatSession.lead_id,
+            ChatSession.created_at,
+            ChatSession.updated_at,
         )
-        return list(result.scalars().all())
+
+        # Apply filters
+        conditions = []
+
+        if accident is not None:
+            conditions.append(ChatSession.accident == accident)
+
+        if search:
+            # Search in email (contains) or exact PLZ match
+            conditions.append(
+                or_(
+                    ChatSession.email.ilike(f"%{search}%"),
+                    ChatSession.plz == search,
+                ),
+            )
+
+        if conditions:
+            query = query.where(*conditions)
+
+        # Get total count
+        count_query = select(func.count()).select_from(ChatSession)
+        if conditions:
+            count_query = count_query.where(*conditions)
+        count_result = await self.db.execute(count_query)
+        total = count_result.scalar() or 0
+
+        # Apply pagination and sorting
+        skip = (page - 1) * limit
+        query = query.order_by(ChatSession.updated_at.desc()).offset(skip).limit(limit)
+
+        result = await self.db.execute(query)
+        sessions = [ChatSession(**dict(row._mapping)) for row in result]
+
+        return sessions, total

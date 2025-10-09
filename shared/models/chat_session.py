@@ -16,7 +16,7 @@ class ChatSession(BaseModel):
     locale = Column(String, nullable=True)
 
     # User data
-    plz = Column(String, nullable=True)  # Postal code
+    plz = Column(String, nullable=True, index=True)  # Postal code
     canton = Column(String, nullable=True)
     yob = Column(Integer, nullable=True)  # Year of birth
     age = Column(Integer, nullable=True)
@@ -24,9 +24,9 @@ class ChatSession(BaseModel):
     deductible = Column(Integer, nullable=True)
     accident = Column(Boolean, nullable=True)
     household_json = Column(JSON, nullable=True)
-    email = Column(String, nullable=True)
+    email = Column(String, nullable=True, index=True)
     consent = Column(Boolean, default=False)
-    lead_id = Column(String, nullable=True, unique=True)
+    lead_id = Column(String, nullable=True, unique=True, index=True)
 
     # Relationships
     messages = relationship(

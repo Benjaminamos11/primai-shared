@@ -10,8 +10,8 @@ class FunnelEvent(BaseModel):
 
     # Event identification
     event_type = Column(String, nullable=False)
-    session_id = Column(String, nullable=True)
-    lead_id = Column(String, nullable=True)
+    session_id = Column(String, nullable=True, index=True)
+    lead_id = Column(String, nullable=True, index=True)
 
     # Event payload
     payload = Column(JSON, nullable=True)

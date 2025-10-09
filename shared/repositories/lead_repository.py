@@ -1,6 +1,6 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models.lead import Lead
@@ -20,23 +20,76 @@ class LeadRepository(BaseRepository[Lead]):
         )
         return result.scalar_one_or_none()
 
-    async def get_by_session_id(self, session_id: str) -> Optional[Lead]:
-        """Get lead by session ID."""
-        result = await self.db.execute(
-            select(Lead).where(Lead.session_id == session_id),
-        )
-        return result.scalar_one_or_none()
-
-    async def get_recent_leads(self, limit: int = 10) -> List[Lead]:
-        """Get recent leads."""
-        result = await self.db.execute(
-            select(Lead).order_by(Lead.created_at.desc()).limit(limit),
-        )
-        return list(result.scalars().all())
-
     async def get_consented_leads(self) -> List[Lead]:
         """Get leads who have given consent."""
         result = await self.db.execute(
             select(Lead).where(Lead.consent == True),  # noqa: E712
         )
         return list(result.scalars().all())
+
+    async def get_leads_with_filters(
+        self,
+        page: int = 1,
+        limit: int = 10,
+        search: Optional[str] = None,
+    ) -> Tuple[List[Lead], int]:
+        """Get paginated leads with filters.
+
+        Args:
+            page: Page number (1-indexed)
+            limit: Items per page
+            search: Search term for email (contains), first name, last name, or phone
+
+        Returns:
+            Tuple of (leads list, total count)
+        """
+        # Build base query with selected fields only
+        query = select(
+            Lead.id,
+            Lead.email,
+            Lead.first_name,
+            Lead.last_name,
+            Lead.phone,
+            Lead.locale,
+            Lead.consent,
+            Lead.source,
+            Lead.session_id,
+            Lead.summary_html,
+            Lead.summary_text,
+            Lead.annual_switch,
+            Lead.created_at,
+            Lead.updated_at,
+        )
+
+        # Apply search filter
+        conditions = []
+
+        if search:
+            # Search in email, first name, last name, or phone (all case-insensitive contains)
+            conditions.append(
+                or_(
+                    Lead.email.ilike(f"%{search}%"),
+                    Lead.first_name.ilike(f"%{search}%"),
+                    Lead.last_name.ilike(f"%{search}%"),
+                    Lead.phone.ilike(f"%{search}%"),
+                ),
+            )
+
+        if conditions:
+            query = query.where(*conditions)
+
+        # Get total count
+        count_query = select(func.count()).select_from(Lead)
+        if conditions:
+            count_query = count_query.where(*conditions)
+        count_result = await self.db.execute(count_query)
+        total = count_result.scalar() or 0
+
+        # Apply pagination and sorting
+        skip = (page - 1) * limit
+        query = query.order_by(Lead.updated_at.desc()).offset(skip).limit(limit)
+
+        result = await self.db.execute(query)
+        leads = [Lead(**dict(row._mapping)) for row in result]
+
+        return leads, total

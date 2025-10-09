@@ -13,6 +13,7 @@ class ChatMessage(BaseModel):
         String,
         ForeignKey("chat_sessions.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
     )
     role = Column(String, nullable=False)  # user, assistant, system
     content = Column(String, nullable=False)

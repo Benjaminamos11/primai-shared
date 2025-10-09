@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Tuple
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models.chat_message import ChatMessage
@@ -22,12 +22,48 @@ class ChatMessageRepository(BaseRepository[ChatMessage]):
         )
         return list(result.scalars().all())
 
-    async def get_latest_message(self, session_id: str) -> ChatMessage:
-        """Get the latest message for a session."""
-        result = await self.db.execute(
-            select(ChatMessage)
-            .where(ChatMessage.session_id == session_id)
-            .order_by(ChatMessage.created_at.desc())
-            .limit(1),
+    async def get_messages_by_session_paginated(
+        self,
+        session_id: str,
+        page: int = 1,
+        limit: int = 10,
+    ) -> Tuple[List[ChatMessage], int]:
+        """Get paginated messages for a session.
+
+        Args:
+            session_id: Session ID to get messages for
+            page: Page number (1-indexed)
+            limit: Items per page
+
+        Returns:
+            Tuple of (messages list, total count)
+        """
+        # Build query with selected fields only
+        query = select(
+            ChatMessage.id,
+            ChatMessage.session_id,
+            ChatMessage.role,
+            ChatMessage.content,
+            ChatMessage.created_at,
+            ChatMessage.updated_at,
+        ).where(ChatMessage.session_id == session_id)
+
+        # Get total count
+        count_query = (
+            select(func.count())
+            .select_from(ChatMessage)
+            .where(
+                ChatMessage.session_id == session_id,
+            )
         )
-        return result.scalar_one_or_none()
+        count_result = await self.db.execute(count_query)
+        total = count_result.scalar() or 0
+
+        # Apply pagination and sorting by updated_at desc
+        skip = (page - 1) * limit
+        query = query.order_by(ChatMessage.updated_at.desc()).offset(skip).limit(limit)
+
+        result = await self.db.execute(query)
+        messages = [ChatMessage(**dict(row._mapping)) for row in result]
+
+        return messages, total

@@ -10,7 +10,7 @@ class User(BaseModel):
 
     __tablename__ = "users"
 
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=False, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
     phone = Column(String, nullable=True)
     password = Column(String, nullable=False)

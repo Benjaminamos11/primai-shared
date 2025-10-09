@@ -10,14 +10,14 @@ class Lead(BaseModel):
     __tablename__ = "leads"
 
     # Basic info
-    email = Column(String, nullable=False)
-    first_name = Column(String, nullable=True)
-    last_name = Column(String, nullable=True)
-    phone = Column(String, nullable=True)
+    email = Column(String, nullable=False, index=True)
+    first_name = Column(String, nullable=True, index=True)
+    last_name = Column(String, nullable=True, index=True)
+    phone = Column(String, nullable=True, index=True)
     locale = Column(String, nullable=True)
     consent = Column(Boolean, default=False)
     source = Column(String, nullable=True)
-    session_id = Column(String, nullable=True, unique=True)
+    session_id = Column(String, nullable=True, unique=True, index=True)
     summary_html = Column(String, nullable=True)
     summary_text = Column(String, nullable=True)
     annual_switch = Column(Boolean, default=False)

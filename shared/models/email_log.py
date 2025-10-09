@@ -18,7 +18,12 @@ class EmailLog(BaseModel):
     payload = Column(JSON, nullable=True)
     status = Column(String, nullable=True)
     error = Column(String, nullable=True)
-    lead_id = Column(String, ForeignKey("leads.id", ondelete="SET NULL"), nullable=True)
+    lead_id = Column(
+        String,
+        ForeignKey("leads.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     # Relationships
     lead = relationship("Lead", back_populates="email_logs")
