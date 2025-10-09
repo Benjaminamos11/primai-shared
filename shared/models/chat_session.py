@@ -26,7 +26,7 @@ class ChatSession(BaseModel):
     household_json = Column(JSON, nullable=True)
     email = Column(String, nullable=True, index=True)
     consent = Column(Boolean, default=False)
-    lead_id = Column(String, nullable=True, unique=True, index=True)
+    lead_id = Column(String, nullable=True, unique=True)
 
     # Relationships
     messages = relationship(

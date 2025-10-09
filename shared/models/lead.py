@@ -17,7 +17,7 @@ class Lead(BaseModel):
     locale = Column(String, nullable=True)
     consent = Column(Boolean, default=False)
     source = Column(String, nullable=True)
-    session_id = Column(String, nullable=True, unique=True, index=True)
+    session_id = Column(String, nullable=True, unique=True)
     summary_html = Column(String, nullable=True)
     summary_text = Column(String, nullable=True)
     annual_switch = Column(Boolean, default=False)
