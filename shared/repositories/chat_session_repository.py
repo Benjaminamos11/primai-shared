@@ -1,9 +1,11 @@
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from shared.models.chat_message import ChatMessage
 from shared.models.chat_session import ChatSession
+from shared.models.session_document import SessionDocument
 from shared.repositories.base_repository import BaseRepository
 
 
@@ -19,8 +21,8 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
         limit: int = 10,
         accident: Optional[bool] = None,
         search: Optional[str] = None,
-    ) -> Tuple[List[ChatSession], int]:
-        """Get paginated chat sessions with filters.
+    ) -> Tuple[List[Dict], int]:
+        """Get paginated chat sessions with filters and counts.
 
         Args:
             page: Page number (1-indexed)
@@ -29,24 +31,39 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
             search: Search term for email (contains) or exact PLZ match
 
         Returns:
-            Tuple of (sessions list, total count)
+            Tuple of (sessions list with counts, total count)
         """
-        # Build base query with selected fields only
-        query = select(
-            ChatSession.id,
-            ChatSession.plz,
-            ChatSession.canton,
-            ChatSession.yob,
-            ChatSession.age,
-            ChatSession.model_pref,
-            ChatSession.deductible,
-            ChatSession.accident,
-            ChatSession.household_json,
-            ChatSession.email,
-            ChatSession.consent,
-            ChatSession.lead_id,
-            ChatSession.created_at,
-            ChatSession.updated_at,
+        # Build base query with selected fields and counts
+        query = (
+            select(
+                ChatSession.id,
+                ChatSession.plz,
+                ChatSession.canton,
+                ChatSession.yob,
+                ChatSession.age,
+                ChatSession.model_pref,
+                ChatSession.deductible,
+                ChatSession.accident,
+                ChatSession.household_json,
+                ChatSession.email,
+                ChatSession.consent,
+                ChatSession.lead_id,
+                ChatSession.created_at,
+                ChatSession.updated_at,
+                func.count(ChatMessage.id.distinct()).label("message_count"),
+                func.count(SessionDocument.id.distinct()).label("document_count"),
+            )
+            .outerjoin(
+                ChatMessage,
+                ChatMessage.session_id == ChatSession.id,
+            )
+            .outerjoin(
+                SessionDocument,
+                SessionDocument.session_id == ChatSession.id,
+            )
+            .group_by(
+                ChatSession.id,
+            )
         )
 
         # Apply filters
@@ -79,6 +96,6 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
         query = query.order_by(ChatSession.updated_at.desc()).offset(skip).limit(limit)
 
         result = await self.db.execute(query)
-        sessions = [ChatSession(**dict(row._mapping)) for row in result]
+        sessions = [dict(row._mapping) for row in result]
 
         return sessions, total
