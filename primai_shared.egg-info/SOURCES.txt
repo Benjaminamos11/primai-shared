@@ -14,6 +14,8 @@ shared/models/chat_session.py
 shared/models/email_log.py
 shared/models/funnel_event.py
 shared/models/lead.py
+shared/models/session_document.py
+shared/models/tool_execution.py
 shared/models/user.py
 shared/repositories/__init__.py
 shared/repositories/base_repository.py
@@ -21,4 +23,6 @@ shared/repositories/chat_message_repository.py
 shared/repositories/chat_session_repository.py
 shared/repositories/funnel_event_repository.py
 shared/repositories/lead_repository.py
+shared/repositories/session_document_repository.py
+shared/repositories/tool_execution_repository.py
 shared/repositories/user_repository.py

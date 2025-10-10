@@ -9,23 +9,23 @@ class ChatMessage(BaseModel):
 
     __tablename__ = "chat_messages"
     __table_args__ = (
-        Index(
-            "idx_chat_messages_updated_at_desc",
-            "updated_at",
-            postgresql_ops={"updated_at": "DESC"},
-        ),
+        Index("idx_chat_messages_session_id", "session_id"),
+        Index("idx_chat_messages_updated_at", "updated_at"),
     )
 
     session_id = Column(
         String,
         ForeignKey("chat_sessions.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     role = Column(String, nullable=False)  # user, assistant, system
     content = Column(String, nullable=False)
-    tool_name = Column(String, nullable=True)  # For tool calls
     meta = Column(JSON, nullable=True)  # Additional metadata
 
     # Relationships
     session = relationship("ChatSession", back_populates="messages")
+    tool_executions = relationship(
+        "ToolExecution",
+        back_populates="message",
+        cascade="all, delete-orphan",
+    )

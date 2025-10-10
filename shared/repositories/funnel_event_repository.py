@@ -31,7 +31,7 @@ class FunnelEventRepository(BaseRepository[FunnelEvent]):
         result = await self.db.execute(
             select(FunnelEvent)
             .where(FunnelEvent.event_type == event_type)
-            .order_by(FunnelEvent.created_at.desc())
+            .order_by(FunnelEvent.created_at.asc())
             .limit(limit),
         )
         return list(result.scalars().all())
@@ -42,12 +42,5 @@ class FunnelEventRepository(BaseRepository[FunnelEvent]):
             select(FunnelEvent)
             .where(FunnelEvent.lead_id == lead_id)
             .order_by(FunnelEvent.created_at),
-        )
-        return list(result.scalars().all())
-
-    async def get_recent_events(self, limit: int = 100) -> List[FunnelEvent]:
-        """Get recent funnel events."""
-        result = await self.db.execute(
-            select(FunnelEvent).order_by(FunnelEvent.created_at.desc()).limit(limit),
         )
         return list(result.scalars().all())

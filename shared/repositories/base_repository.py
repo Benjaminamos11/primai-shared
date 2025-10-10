@@ -40,6 +40,23 @@ class BaseRepository(Generic[ModelType]):
         await self.db.refresh(instance)
         return instance
 
+    async def bulk_create(self, items: List[dict]) -> List[ModelType]:
+        """Create multiple records in a single transaction.
+
+        Args:
+            items: List of dictionaries with model fields
+
+        Returns:
+            List of created model instances
+        """
+        instances = [self.model(**item) for item in items]
+        self.db.add_all(instances)
+        await self.db.commit()
+        # Refresh all instances to get generated IDs and timestamps
+        for instance in instances:
+            await self.db.refresh(instance)
+        return instances
+
     async def update(self, id: str, **kwargs) -> Optional[ModelType]:
         """Update record by ID."""
         instance = await self.get_by_id(id)
