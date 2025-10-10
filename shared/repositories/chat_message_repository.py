@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from shared.models.chat_message import ChatMessage
 from shared.repositories.base_repository import BaseRepository
@@ -28,7 +29,8 @@ class ChatMessageRepository(BaseRepository[ChatMessage]):
         page: int = 1,
         limit: int = 10,
     ) -> Tuple[List[ChatMessage], int]:
-        """Get paginated messages for a session.
+        """Get paginated messages for a session with tool executions and
+        documents.
 
         Args:
             session_id: Session ID to get messages for
@@ -38,32 +40,35 @@ class ChatMessageRepository(BaseRepository[ChatMessage]):
         Returns:
             Tuple of (messages list, total count)
         """
-        # Build query with selected fields only
-        query = select(
-            ChatMessage.id,
-            ChatMessage.session_id,
-            ChatMessage.role,
-            ChatMessage.content,
-            ChatMessage.created_at,
-            ChatMessage.updated_at,
-        ).where(ChatMessage.session_id == session_id)
-
         # Get total count
         count_query = (
             select(func.count())
             .select_from(ChatMessage)
-            .where(
-                ChatMessage.session_id == session_id,
-            )
+            .where(ChatMessage.session_id == session_id)
         )
         count_result = await self.db.execute(count_query)
         total = count_result.scalar() or 0
 
-        # Apply pagination and sorting by updated_at desc
+        # Build query with eager loading of tool_executions and their documents
         skip = (page - 1) * limit
-        query = query.order_by(ChatMessage.updated_at.desc()).offset(skip).limit(limit)
+
+        # Import ToolExecution to access its relationships
+        from shared.models.tool_execution import ToolExecution
+
+        query = (
+            select(ChatMessage)
+            .where(ChatMessage.session_id == session_id)
+            .options(
+                selectinload(ChatMessage.tool_executions).selectinload(
+                    ToolExecution.documents,
+                ),
+            )
+            .order_by(ChatMessage.updated_at.asc())
+            .offset(skip)
+            .limit(limit)
+        )
 
         result = await self.db.execute(query)
-        messages = [ChatMessage(**dict(row._mapping)) for row in result]
+        messages = list(result.scalars().all())
 
         return messages, total

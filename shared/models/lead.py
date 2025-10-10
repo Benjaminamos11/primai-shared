@@ -9,18 +9,18 @@ class Lead(BaseModel):
 
     __tablename__ = "leads"
     __table_args__ = (
-        Index(
-            "idx_leads_updated_at_desc",
-            "updated_at",
-            postgresql_ops={"updated_at": "DESC"},
-        ),
+        Index("idx_leads_email", "email"),
+        Index("idx_leads_first_name", "first_name"),
+        Index("idx_leads_last_name", "last_name"),
+        Index("idx_leads_phone", "phone"),
+        Index("idx_leads_updated_at", "updated_at"),
     )
 
     # Basic info
-    email = Column(String, nullable=False, index=True)
-    first_name = Column(String, nullable=True, index=True)
-    last_name = Column(String, nullable=True, index=True)
-    phone = Column(String, nullable=True, index=True)
+    email = Column(String, nullable=False)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
     locale = Column(String, nullable=True)
     consent = Column(Boolean, default=False)
     source = Column(String, nullable=True)
