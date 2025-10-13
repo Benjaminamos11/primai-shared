@@ -21,6 +21,7 @@ shared/repositories/__init__.py
 shared/repositories/base_repository.py
 shared/repositories/chat_message_repository.py
 shared/repositories/chat_session_repository.py
+shared/repositories/email_log_repository.py
 shared/repositories/funnel_event_repository.py
 shared/repositories/lead_repository.py
 shared/repositories/session_document_repository.py
