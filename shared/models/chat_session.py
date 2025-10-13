@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Boolean, Column, ForeignKey, Index, Integer, String
+from sqlalchemy import JSON, Boolean, Column, Index, Integer, String
 from sqlalchemy.orm import relationship
 
 from shared.models.base import BaseModel
@@ -31,24 +31,7 @@ class ChatSession(BaseModel):
     household_json = Column(JSON, nullable=True)
     email = Column(String, nullable=True)
     consent = Column(Boolean, default=False)
-    lead_id = Column(
-        String,
-        ForeignKey(
-            "leads.id",
-            ondelete="SET NULL",
-            use_alter=True,
-            name="fk_chat_sessions_lead_id",
-        ),
-        nullable=True,
-        unique=True,
-    )
-
     # Relationships
-    lead = relationship(
-        "Lead",
-        foreign_keys="[ChatSession.lead_id]",
-        uselist=False,
-    )
     messages = relationship(
         "ChatMessage",
         back_populates="session",

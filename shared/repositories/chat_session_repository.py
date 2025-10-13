@@ -1,4 +1,5 @@
-from typing import Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import List, Optional, Tuple
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,19 +22,25 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
         limit: int = 10,
         accident: Optional[bool] = None,
         search: Optional[str] = None,
-    ) -> Tuple[List[Dict], int]:
-        """Get paginated chat sessions with filters and counts.
+        created_from: Optional[str] = None,
+        created_to: Optional[str] = None,
+        min_message_count: Optional[int] = None,
+    ) -> Tuple[List[ChatSession], int]:
+        """Get paginated chat sessions with filters.
 
         Args:
             page: Page number (1-indexed)
             limit: Items per page
             accident: Filter by accident coverage (True/False/None for all)
             search: Search term for email (contains) or exact PLZ match
+            created_from: Filter by created_at >= this date
+            created_to: Filter by created_at <= this date
+            min_message_count: Filter sessions with message count > this value
 
         Returns:
             Tuple of (sessions list with counts, total count)
         """
-        # Build base query with selected fields and counts
+        # Build base query with selected fields only
         query = (
             select(
                 ChatSession.id,
@@ -47,7 +54,6 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
                 ChatSession.household_json,
                 ChatSession.email,
                 ChatSession.consent,
-                ChatSession.lead_id,
                 ChatSession.created_at,
                 ChatSession.updated_at,
                 func.count(ChatMessage.id.distinct()).label("message_count"),
@@ -81,11 +87,66 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
                 ),
             )
 
+        if created_from:
+            # Convert string date to datetime object for comparison
+            try:
+                created_from_date = datetime.strptime(created_from, "%Y-%m-%d")
+                conditions.append(ChatSession.created_at >= created_from_date)
+            except ValueError:
+                # If parsing fails, skip this filter
+                pass
+
+        if created_to:
+            # Convert string date to datetime object for comparison
+            try:
+                created_to_date = datetime.strptime(created_to, "%Y-%m-%d")
+                # Add 23:59:59 to include the entire day
+                created_to_date = created_to_date.replace(hour=23, minute=59, second=59)
+                conditions.append(ChatSession.created_at <= created_to_date)
+            except ValueError:
+                # If parsing fails, skip this filter
+                pass
+
+        # If min_message_count is specified, filter sessions with message count > min_message_count
+        if min_message_count is not None:
+            # Subquery to count messages per session
+            message_count_subquery = (
+                select(
+                    ChatMessage.session_id,
+                    func.count(ChatMessage.id).label("message_count"),
+                )
+                .group_by(ChatMessage.session_id)
+                .having(func.count(ChatMessage.id) > min_message_count)
+                .subquery()
+            )
+
+            # Add join to filter sessions
+            query = query.join(
+                message_count_subquery,
+                ChatSession.id == message_count_subquery.c.session_id,
+            )
+
         if conditions:
             query = query.where(*conditions)
 
         # Get total count
         count_query = select(func.count()).select_from(ChatSession)
+
+        if min_message_count is not None:
+            message_count_subquery = (
+                select(
+                    ChatMessage.session_id,
+                    func.count(ChatMessage.id).label("message_count"),
+                )
+                .group_by(ChatMessage.session_id)
+                .having(func.count(ChatMessage.id) > min_message_count)
+                .subquery()
+            )
+            count_query = count_query.join(
+                message_count_subquery,
+                ChatSession.id == message_count_subquery.c.session_id,
+            )
+
         if conditions:
             count_query = count_query.where(*conditions)
         count_result = await self.db.execute(count_query)
